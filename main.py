@@ -89,6 +89,49 @@ def fn_imp_course():
     db_con.close()
 
 
+def review_page():
+    review_ = Toplevel()
+    review_.geometry('1366x768')
+    review_.resizable(0, 0)
+    review_.title("Review data")
+    review_.focus_set()
+    review_.grab_set()
+    load = Image.open("images\\Autumn.jpg")
+    render = ImageTk.PhotoImage(load)
+    img_name = PhotoImage(file='images\\name_database.png')
+    img_view_teacher = PhotoImage(file='images\\view_teacher.png')
+    img_view_course = PhotoImage(file='images\\view_course.png')
+    # Frames
+    fr_bg_review = Frame(review_, width=1368, height=768)
+    fr_bg_review.place(x=0, y=0)  # khung background
+    fr_review = Frame(review_, bg='white', width=1328, height=728)
+    fr_review.pack(padx=20, pady=20)  # khung trắng
+
+    f0 = LabelFrame(fr_review, text='Menu', bg='white', width=450, height=608)
+    f0.propagate(0)
+    f0.place(x=15, y=100)
+
+    # Labels
+    lbl_bg_review = Label(fr_bg_review, image=render)
+    lbl_bg_review.place(x=0, y=0)  # chứa background
+    lbl_name_db = Label(fr_review, image=img_name, bg='white')
+    lbl_name_db.place(x=500, y=15)
+    # Buttons
+    btn_view_teacher = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_teacher,
+                              activebackground='white')  #
+    btn_view_teacher.pack(padx=20, pady=20)
+    btn_view_course = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_course,
+                             activebackground='white')  #
+    btn_view_course.pack(padx=20, pady=20)
+    btn_ = Button(f0,text='dsadsadsadsadsaaaaaa')
+    btn_.place(x=180,y=500)
+    review_.mainloop()
+
+
+def analysis_page(args):
+    pass
+
+
 def home_page():
     try:
         root_.destroy()
@@ -109,12 +152,13 @@ def home_page():
     lbl_bg_home = Label(fr_home, image=render)
     lbl_bg_home.place(x=0, y=0)
 
-    btn_view = Button(fr_home,image=img_view, bd=0, bg='white', activebackground='white')
+    btn_view = Button(fr_home, command=review_page, image=img_view, bd=0, bg='white', activebackground='white')
     btn_view.place(x=200, y=400)
 
-    btn_run = Button(fr_home, image=img_run, bd=0, bg='white', activebackground='white')
+    btn_run = Button(fr_home, command=analysis_page, image=img_run, bd=0, bg='white', activebackground='white')
     btn_run.place(x=780, y=400)
     home_.mainloop()
+
 
 def welcome_page():
     # Frames
