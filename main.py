@@ -101,6 +101,7 @@ def review_page():
     img_name = PhotoImage(file='images\\name_database.png')
     img_view_teacher = PhotoImage(file='images\\view_teacher.png')
     img_view_course = PhotoImage(file='images\\view_course.png')
+    img_view_exit = PhotoImage(file='images\\view_exit.png')
     # Frames
     fr_bg_review = Frame(review_, width=1368, height=768)
     fr_bg_review.place(x=0, y=0)  # khung background
@@ -123,8 +124,9 @@ def review_page():
     btn_view_course = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_course,
                              activebackground='white')  #
     btn_view_course.pack(padx=20, pady=20)
-    btn_ = Button(f0,text='dsadsadsadsadsaaaaaa')
-    btn_.place(x=180,y=500)
+    btn_view_exit = Button(f0, command='', bd=0, bg='white', image=img_view_exit,
+                           activebackground='white')
+    btn_view_exit.place(x=125,y=488)
     review_.mainloop()
 
 
