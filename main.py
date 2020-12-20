@@ -94,7 +94,7 @@ def fn_clear_tv(e):
 
 
 # PAGE
-
+############ UNFINISHED #############
 def view_teacher_page():
     db_conn = sqlite3.connect("database.db")
     view_teacher = Toplevel(review_)
@@ -193,6 +193,8 @@ def view_course_page():
     tv2.pack(fill=BOTH, expand=TRUE)
 
     view_course.mainloop()
+
+
 def review_page():
     global review_
     review_ = Toplevel()
