@@ -89,13 +89,78 @@ def fn_imp_course():
     db_con.close()
 
 
+def fn_clear_tv(e):
+    e.delete(*e.get_children())
+
+
+# PAGE
+
+def view_teacher_page():
+    db_conn = sqlite3.connect("database.db")
+    global teacher_tv, view_teacher
+    view_teacher = Toplevel(review_)
+    view_teacher.geometry('1200x800')
+    view_teacher.resizable(0,0)
+    view_teacher.title("Teacher's information")
+    load = Image.open("images\\g-t-b.jpg")
+    render = ImageTk.PhotoImage(load)
+
+    def view_teacher_info(e):
+        selected = teacher_tv.focus()
+        values = teacher_tv.item(selected, 'values')
+        fr_lbl_teacher.config(text=f"{values[1]}'s information")
+        xxx = pd.read_sql(f"""Select * from invigilator_db where ID = {values[0]}""", db_conn)  # query get selected data
+        tv3['column'] = list(xxx.columns)
+        tv3['show'] = 'headings'
+        for column in tv3['column']:
+            tv3.heading(column, text=column)
+
+        teacher_rows_df = xxx.to_numpy().tolist()
+        for row in teacher_rows_df:
+            tv3.insert("", "end", value=row)
+        tv3.pack(fill=BOTH, pady=10, padx=10)
+
+    fr_bg_tview = Frame(view_teacher, width=1200, height=800)
+    fr_bg_tview.place(x=0, y=0)  # khung background
+    fr_tview = Frame(view_teacher, bg='white', width=1160, height=760)
+    fr_tview.pack(padx=20, pady=20)  # khung trắng
+
+    lbl_bg_review = Label(fr_bg_tview, image=render)
+    lbl_bg_review.place(x=0, y=0)  # chứa background
+
+    fr_teacher_info = Frame(fr_tview, bg='white')
+    fr_teacher_info.place(x=20, y=20)
+    fr_lbl_teacher = LabelFrame(fr_tview, bg='white')
+    fr_lbl_teacher.place(x=490, y=20)
+
+    # ScrollBar
+    y_scroll = Scrollbar(fr_teacher_info)
+    # TREE VIEW
+    teacher_tv = ttk.Treeview(fr_teacher_info,yscrollcommand=y_scroll, height=33)
+    teacher_tv.bind("<ButtonRelease-1>", view_teacher_info)
+    tv3 = ttk.Treeview(fr_lbl_teacher)
+    # OUTPUT DATA TO teacher_tv
+    teacher_info_df = pd.read_sql("""SELECT * FROM invigilator_db ORDER BY ID;""", db_conn)
+    y_scroll.pack(side=RIGHT, fill=Y)
+    y_scroll.config(command=teacher_tv.yview)
+    teacher_tv['column'] = list(teacher_info_df.columns)
+    teacher_tv['show'] = 'headings'
+    for column in teacher_tv['column']:
+        teacher_tv.heading(column, text=column)
+    teacher_rows_df = teacher_info_df.to_numpy().tolist()
+    for row in teacher_rows_df:
+        teacher_tv.insert("", "end", value=row)
+    teacher_tv.pack(pady=10, padx=10)
+
+    view_teacher.mainloop()
+
+
 def review_page():
+    global review_
     review_ = Toplevel()
     review_.geometry('1366x768')
     review_.resizable(0, 0)
     review_.title("Review data")
-    review_.focus_set()
-    review_.grab_set()
     load = Image.open("images\\Autumn.jpg")
     render = ImageTk.PhotoImage(load)
     img_name = PhotoImage(file='images\\name_database.png')
@@ -118,15 +183,15 @@ def review_page():
     lbl_name_db = Label(fr_review, image=img_name, bg='white')
     lbl_name_db.place(x=500, y=15)
     # Buttons
-    btn_view_teacher = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_teacher,
-                              activebackground='white')  #
+    btn_view_teacher = Button(f0, command=view_teacher_page, bd=0, bg='white', image=img_view_teacher,
+                              activebackground='white')
     btn_view_teacher.pack(padx=20, pady=20)
     btn_view_course = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_course,
-                             activebackground='white')  #
+                             activebackground='white')
     btn_view_course.pack(padx=20, pady=20)
     btn_view_exit = Button(f0, command='', bd=0, bg='white', image=img_view_exit,
                            activebackground='white')
-    btn_view_exit.place(x=125,y=488)
+    btn_view_exit.place(x=125, y=488)
     review_.mainloop()
 
 
