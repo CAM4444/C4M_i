@@ -97,14 +97,13 @@ def fn_clear_tv(e):
 
 def view_teacher_page():
     db_conn = sqlite3.connect("database.db")
-    global teacher_tv, view_teacher
     view_teacher = Toplevel(review_)
     view_teacher.geometry('1200x800')
     view_teacher.resizable(0,0)
-    view_teacher.title("Teacher's information")
+    view_teacher.title("Teacher's information PAGE")
     load = Image.open("images\\g-t-b.jpg")
     render = ImageTk.PhotoImage(load)
-
+    img_name = PhotoImage(file='images\\name_database.png')
     def view_teacher_info(e):
         selected = teacher_tv.focus()
         values = teacher_tv.item(selected, 'values')
@@ -127,18 +126,20 @@ def view_teacher_page():
 
     lbl_bg_review = Label(fr_bg_tview, image=render)
     lbl_bg_review.place(x=0, y=0)  # chứa background
+    lbl_name_db = Label(fr_tview, image=img_name, bg='white')
+    lbl_name_db.place(x=500, y=20)
 
     fr_teacher_info = Frame(fr_tview, bg='white')
     fr_teacher_info.place(x=20, y=20)
     fr_lbl_teacher = LabelFrame(fr_tview, bg='white')
-    fr_lbl_teacher.place(x=490, y=20)
+    fr_lbl_teacher.place(x=490, y=120)
 
     # ScrollBar
     y_scroll = Scrollbar(fr_teacher_info)
     # TREE VIEW
     teacher_tv = ttk.Treeview(fr_teacher_info,yscrollcommand=y_scroll, height=33)
     teacher_tv.bind("<ButtonRelease-1>", view_teacher_info)
-    tv3 = ttk.Treeview(fr_lbl_teacher)
+    tv3 = ttk.Treeview(fr_lbl_teacher)  # chứa thông tin được click
     # OUTPUT DATA TO teacher_tv
     teacher_info_df = pd.read_sql("""SELECT * FROM invigilator_db ORDER BY ID;""", db_conn)
     y_scroll.pack(side=RIGHT, fill=Y)
@@ -155,12 +156,49 @@ def view_teacher_page():
     view_teacher.mainloop()
 
 
+def view_course_page():
+    db_conn = sqlite3.connect("database.db")
+    view_course = Toplevel(review_)
+    view_course.geometry('1200x800')
+    view_course.resizable(0, 0)
+    view_course.title("Course's information PAGE")
+    load = Image.open("images\\Kye-Meh.jpg")
+    render = ImageTk.PhotoImage(load)
+    img_name = PhotoImage(file='images\\name_database.png')
+    # FRAMES
+    fr_bg_cview = Frame(view_course, width=1200, height=800)
+    fr_bg_cview.place(x=0, y=0)  # khung background
+    fr_cview = Frame(view_course, bg='white', width=1160, height=760)
+    fr_cview.pack(padx=20, pady=20)  # khung trắng
+    fr_course_info = Frame(fr_cview, bg='white')
+    fr_course_info.pack(padx=20,pady=120, fill=BOTH)
+    # LABELS
+    lbl_bg_review = Label(fr_bg_cview, image=render)
+    lbl_bg_review.place(x=0, y=0)  # chứa background (render)
+    lbl_name_db = Label(fr_cview, image=img_name, bg='white')
+    lbl_name_db.place(x=450, y=20)  # chứa tên (img_name)
+    # TREE VIEW
+    tv2 = ttk.Treeview(fr_course_info, height=33)
+    # OUTPUT DATA TO TREE VIEW 2
+    schedule_info_df = pd.read_sql("""SELECT * FROM schedule_db ORDER BY CourseID""",db_conn)
+    tv2['column'] = list(schedule_info_df.columns)
+    tv2['show'] = 'headings'
+    for column in tv2['column']:
+        tv2.heading(column, text=column)
+    tv2.column('#1', width=70,stretch=0)
+    teacher_rows_df = schedule_info_df.to_numpy().tolist()
+    for row in teacher_rows_df:
+        tv2.insert("", "end", value=row)
+
+    tv2.pack(fill=BOTH, expand=TRUE)
+
+    view_course.mainloop()
 def review_page():
     global review_
     review_ = Toplevel()
     review_.geometry('1366x768')
     review_.resizable(0, 0)
-    review_.title("Review data")
+    review_.title("Review data PAGE")
     load = Image.open("images\\Autumn.jpg")
     render = ImageTk.PhotoImage(load)
     img_name = PhotoImage(file='images\\name_database.png')
@@ -186,7 +224,7 @@ def review_page():
     btn_view_teacher = Button(f0, command=view_teacher_page, bd=0, bg='white', image=img_view_teacher,
                               activebackground='white')
     btn_view_teacher.pack(padx=20, pady=20)
-    btn_view_course = Button(f0, command='fn_imp_teacher', bd=0, bg='white', image=img_view_course,
+    btn_view_course = Button(f0, command=view_course_page, bd=0, bg='white', image=img_view_course,
                              activebackground='white')
     btn_view_course.pack(padx=20, pady=20)
     btn_view_exit = Button(f0, command='', bd=0, bg='white', image=img_view_exit,
@@ -207,7 +245,7 @@ def home_page():
     home_ = Tk()
     home_.geometry("1366x768")
     home_.resizable(0, 0)
-    home_.title("Exam invigilator scheduler")
+    home_.title("HOME PAGE")
     load = Image.open("images\\Autumn.jpg")
     render = ImageTk.PhotoImage(load)
     img_view = PhotoImage(file="images\\view_data.png")
