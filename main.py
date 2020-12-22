@@ -40,7 +40,7 @@ def fn_imp_teacher():
         inviglator_df.to_sql("invigilator_db", db_con, if_exists="append", index=False)
     except sqlite3.OperationalError:
         messagebox.showerror("Error!",
-                             f"Unable to execute file into database.\nFile path: {teacher_file}.\nPlease try again!")
+                             f"File path: {teacher_file}.\n\nUnable to import selected file into database.\nPlease try again!")
         return None
     db_con.commit()
     db_con.close()
@@ -74,7 +74,7 @@ def fn_imp_course():
                                         nrows=612)
         except ValueError:
             messagebox.showerror("Error!",
-                                 f"Unable to execute file into database.\nFile path: {exam_file}.\nPlease try again!")
+                                 f"File path: {exam_file}.\n\nUnable to import selected file into database.\nPlease try again!")
             return None
         except FileNotFoundError:
             messagebox.showerror("Error!", "File note found!")
@@ -103,12 +103,14 @@ def view_teacher_page():
     view_teacher.title("Teacher's information PAGE")
     load = Image.open("images\\g-t-b.jpg")
     render = ImageTk.PhotoImage(load)
-    img_name = PhotoImage(file='images\\name_database.png')
+    img_name = PhotoImage(file='images\\name_teacher_info.png')
+
     def view_teacher_info(e):
         selected = teacher_tv.focus()
         values = teacher_tv.item(selected, 'values')
         fr_lbl_teacher.config(text=f"{values[1]}'s information")
         xxx = pd.read_sql(f"""Select * from invigilator_db where ID = {values[0]}""", db_conn)  # query get selected data
+        fn_clear_tv(tv3)
         tv3['column'] = list(xxx.columns)
         tv3['show'] = 'headings'
         for column in tv3['column']:
@@ -131,13 +133,13 @@ def view_teacher_page():
 
     fr_teacher_info = Frame(fr_tview, bg='white')
     fr_teacher_info.place(x=20, y=20)
-    fr_lbl_teacher = LabelFrame(fr_tview, bg='white')
+    fr_lbl_teacher = LabelFrame(fr_tview, bg='white', fg='#82d0d8', font=(20))
     fr_lbl_teacher.place(x=490, y=120)
 
     # ScrollBar
     y_scroll = Scrollbar(fr_teacher_info)
     # TREE VIEW
-    teacher_tv = ttk.Treeview(fr_teacher_info,yscrollcommand=y_scroll, height=33)
+    teacher_tv = ttk.Treeview(fr_teacher_info, yscrollcommand=y_scroll, height=33)
     teacher_tv.bind("<ButtonRelease-1>", view_teacher_info)
     tv3 = ttk.Treeview(fr_lbl_teacher)  # chứa thông tin được click
     # OUTPUT DATA TO teacher_tv
@@ -177,10 +179,14 @@ def view_course_page():
     lbl_bg_review.place(x=0, y=0)  # chứa background (render)
     lbl_name_db = Label(fr_cview, image=img_name, bg='white')
     lbl_name_db.place(x=450, y=20)  # chứa tên (img_name)
+    # SCROLL BAR
+    y_scroll = Scrollbar(fr_course_info)
     # TREE VIEW
-    tv2 = ttk.Treeview(fr_course_info, height=33)
+    tv2 = ttk.Treeview(fr_course_info, yscrollcommand=y_scroll, height=33)
     # OUTPUT DATA TO TREE VIEW 2
     schedule_info_df = pd.read_sql("""SELECT * FROM schedule_db ORDER BY CourseID""",db_conn)
+    y_scroll.pack(side=RIGHT, fill=Y)
+    y_scroll.config(command=tv2.yview)
     tv2['column'] = list(schedule_info_df.columns)
     tv2['show'] = 'headings'
     for column in tv2['column']:
@@ -203,7 +209,7 @@ def review_page():
     review_.title("Review data PAGE")
     load = Image.open("images\\Autumn.jpg")
     render = ImageTk.PhotoImage(load)
-    img_name = PhotoImage(file='images\\name_database.png')
+    img_name = PhotoImage(file='images\\name_blue_black.png')
     img_view_teacher = PhotoImage(file='images\\view_teacher.png')
     img_view_course = PhotoImage(file='images\\view_course.png')
     img_view_exit = PhotoImage(file='images\\view_exit.png')
@@ -213,7 +219,8 @@ def review_page():
     fr_review = Frame(review_, bg='white', width=1328, height=728)
     fr_review.pack(padx=20, pady=20)  # khung trắng
 
-    f0 = LabelFrame(fr_review, text='Menu', bg='white', width=450, height=608)
+    f0 = LabelFrame(fr_review, text='Menu', bg='white', width=450, height=608,
+                    font=("Helvetica", 20))
     f0.propagate(0)
     f0.place(x=15, y=100)
 
@@ -241,30 +248,32 @@ def analysis_page(args):
 
 def home_page():
     try:
-        root_.destroy()
-    except:
-        pass
-    home_ = Tk()
-    home_.geometry("1366x768")
-    home_.resizable(0, 0)
-    home_.title("HOME PAGE")
-    load = Image.open("images\\Autumn.jpg")
-    render = ImageTk.PhotoImage(load)
-    img_view = PhotoImage(file="images\\view_data.png")
-    img_run = PhotoImage(file="images\\run_algorithm.png")
-    # Frames
-    fr_home = Frame(home_, width=1368, height=768)
-    fr_home.place(x=0, y=0)
-    # Labels
-    lbl_bg_home = Label(fr_home, image=render)
-    lbl_bg_home.place(x=0, y=0)
+        conn_ = sqlite3.connect("database.db")
+        check_case = pd.read_sql("Select * from invigilator_db", conn_)
+        home_ = Toplevel()
+        home_.geometry("1366x768")
+        home_.resizable(0, 0)
+        home_.title("HOME PAGE")
+        load = Image.open("images\\Autumn.jpg")
+        render = ImageTk.PhotoImage(load)
+        img_view = PhotoImage(file="images\\view_data.png")
+        img_run = PhotoImage(file="images\\run_algorithm.png")
+        # Frames
+        fr_home = Frame(home_, width=1368, height=768)
+        fr_home.place(x=0, y=0)
+        # Labels
+        lbl_bg_home = Label(fr_home, image=render)
+        lbl_bg_home.place(x=0, y=0)
 
-    btn_view = Button(fr_home, command=review_page, image=img_view, bd=0, bg='white', activebackground='white')
-    btn_view.place(x=200, y=400)
+        btn_view = Button(fr_home, command=review_page, image=img_view, bd=0, bg='white', activebackground='white')
+        btn_view.place(x=200, y=400)
 
-    btn_run = Button(fr_home, command=analysis_page, image=img_run, bd=0, bg='white', activebackground='white')
-    btn_run.place(x=780, y=400)
-    home_.mainloop()
+        btn_run = Button(fr_home, command=analysis_page, image=img_run, bd=0, bg='white', activebackground='white')
+        btn_run.place(x=780, y=400)
+
+        home_.mainloop()
+    except pd.io.sql.DatabaseError:
+        messagebox.showerror("Error!", f"There are no data to execute.\nPlease make sure you already import data!")
 
 
 def welcome_page():
