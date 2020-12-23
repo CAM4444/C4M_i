@@ -46,52 +46,57 @@ def fn_imp_teacher():
         messagebox.showerror("Error!",
                              f"File path: {teacher_file}.\n\nUnable to import selected file into database.\nPlease try again!")
         return None
+    except UnboundLocalError:
+        messagebox.showerror("Error!", "You just canceling import TEACHER.\nPlease try again!")
     db_con.commit()
     db_con.close()
 
 
 def fn_imp_course():
-    db_con = sqlite3.connect("database.db")
-    c = db_con.cursor()
-    c.executescript("""
-        DROP TABLE IF EXISTS schedule_db; 
-        CREATE TABLE IF NOT EXISTS schedule_db(
-            CourseID INTEGER NOT NULL,
-            CourseName TEXT,
-            TestDate Date, 
-            ShiftOD INTEGER,
-            Room TEXT,
-            QuantityOfInvigilator INTEGER,
-            PRIMARY KEY(CourseID)
-        ); 
-            """)
-    exam_file = filedialog.askopenfilename(initialdir='/',
-                                           title='Select Teacher dataset',
-                                           filetype=(('xlsx files', '*.xlsx'), ('All files', '*,*')))
-    if exam_file:
-        try:
-            schedule_df = pd.read_excel(exam_file,  # schedule_df = test_schedule
-                                        sheet_name='Sheet1',
-                                        header=0,
-                                        skiprows=7,
-                                        usecols=["STT", "Tên MH", "Ngày thi", "Ca Thi", "Phòng Thi", "Số CBCT"],
-                                        nrows=612)
-        except ValueError:
-            messagebox.showerror("Error!",
-                                 f"File path: {exam_file}.\n\nUnable to import selected file into database.\nPlease try again!")
-            return None
-        except FileNotFoundError:
-            messagebox.showerror("Error!", "File note found!")
-            return None
+    try:
+        db_con = sqlite3.connect("database.db")
+        c = db_con.cursor()
+        c.executescript("""
+            DROP TABLE IF EXISTS schedule_db; 
+            CREATE TABLE IF NOT EXISTS schedule_db(
+                CourseID INTEGER NOT NULL,
+                CourseName TEXT,
+                TestDate Date, 
+                ShiftOD INTEGER,
+                Room TEXT,
+                QuantityOfInvigilator INTEGER,
+                PRIMARY KEY(CourseID)
+            ); 
+                """)
+        exam_file = filedialog.askopenfilename(initialdir='/',
+                                               title='Select Teacher dataset',
+                                               filetype=(('xlsx files', '*.xlsx'), ('All files', '*,*')))
+        if exam_file:
+            try:
+                schedule_df = pd.read_excel(exam_file,  # schedule_df = test_schedule
+                                            sheet_name='Sheet1',
+                                            header=0,
+                                            skiprows=7,
+                                            usecols=["STT", "Tên MH", "Ngày thi", "Ca Thi", "Phòng Thi", "Số CBCT"],
+                                            nrows=612)
+            except ValueError:
+                messagebox.showerror("Error!",
+                                     f"File path: {exam_file}.\n\nUnable to import selected file into database.\nPlease try again!")
+                return None
+            except FileNotFoundError:
+                messagebox.showerror("Error!", "File note found!")
+                return None
 
-    schedule_df = schedule_df.rename(
-        columns={'STT': 'CourseID', 'Tên MH': 'CourseName', 'Ngày thi': 'TestDate', 'Ca Thi': 'ShiftOD',
-                 'Phòng Thi': 'Room', 'Số CBCT': 'QuantityOfInvigilator', })
-    schedule_df.sort_values(by=['TestDate', 'ShiftOD'], inplace=True, ascending=True)
-    schedule_df.to_sql('schedule_db', db_con, if_exists='append', index=False)
-    db_con.commit()
-    db_con.close()
-
+        schedule_df = schedule_df.rename(
+            columns={'STT': 'CourseID', 'Tên MH': 'CourseName', 'Ngày thi': 'TestDate', 'Ca Thi': 'ShiftOD',
+                     'Phòng Thi': 'Room', 'Số CBCT': 'QuantityOfInvigilator', })
+        schedule_df.sort_values(by=['TestDate', 'ShiftOD'], inplace=True, ascending=True)
+        schedule_df.to_sql('schedule_db', db_con, if_exists='append', index=False)
+        db_con.commit()
+        db_con.close()
+    except UnboundLocalError:
+        messagebox.showerror("Error!", "You just canceling import COURSE.\nPlease try again!")
+    return btn_GAs.config(state='active')
 
 def fn_clear_tv(e):
     e.delete(*e.get_children())
@@ -110,28 +115,40 @@ def view_teacher_page():
     img_name = PhotoImage(file='images\\name_teacher_info.png')
 
     def view_teacher_info(e):
-        selected = teacher_tv.focus()
-        values = teacher_tv.item(selected, 'values')
-        fr_lbl_teacher.config(text=f"{values[1]}'s information")
-        xxx = pd.read_sql(f"""SELECT CourseID, CourseName, Room, ShiftOD, TestDate
-        FROM 
-            (SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, 
-            invigilator_db.ID Invigilator 
-            FROM assign_db, invigilator_db, schedule_db
-            WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID  
-            ORDER BY schedule_db.TestDate) 
-        WHERE Invigilator = {values[0]}""", db_conn)  # query get selected data
-        fn_clear_tv(tv3)
-        tv3['column'] = list(xxx.columns)
-        tv3['show'] = 'headings'
-        for column in tv3['column']:
-            tv3.heading(column, text=column)
-
-        teacher_rows_df = xxx.to_numpy().tolist()
-        for row in teacher_rows_df:
-            tv3.insert("", "end", value=row)
-        tv3.pack(fill=BOTH, pady=10, padx=10)
-
+        try:
+            selected = teacher_tv.focus()
+            values = teacher_tv.item(selected, 'values')
+            fr_lbl_teacher.config(text=f"{values[1]}'s information")
+            xxx = pd.read_sql(f"""SELECT CourseID, CourseName, Room, ShiftOD, TestDate
+            FROM 
+                (SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, 
+                invigilator_db.ID Invigilator 
+                FROM assign_db, invigilator_db, schedule_db
+                WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID  
+                ORDER BY schedule_db.TestDate) 
+            WHERE Invigilator = {values[0]}""", db_conn)  # query get selected data
+            fn_clear_tv(tv3)
+            tv3['column'] = list(xxx.columns)
+            tv3['show'] = 'headings'
+            for column in tv3['column']:
+                tv3.heading(column, text=column)
+            tv3.column('#1', width=70, stretch=0, anchor='n')
+            tv3.column('#2', width=200, stretch=0, anchor='w')
+            tv3.column('#3', width=70, stretch=0, anchor='n')
+            tv3.column('#4', width=70, stretch=0, anchor='n')
+            tv3.column('#5', stretch=0, anchor='n')
+            teacher_rows_df = xxx.to_numpy().tolist()
+            for row in teacher_rows_df:
+                tv3.insert("", "end", value=row)
+            tv3.pack(fill=BOTH, pady=10, padx=10)
+        except sqlite3.OperationalError:
+            messagebox.showinfo("Info!", "Nothing to show yet!\nPlease run the algorithm first.")
+            review_.destroy()
+            return home_
+        except pd.io.sql.DatabaseError:
+            messagebox.showinfo("Info!", "Nothing to show yet!\nPlease run the algorithm first.")
+            review_.destroy()
+            return home_
     fr_bg_tview = Frame(view_teacher, width=1200, height=800)
     fr_bg_tview.place(x=0, y=0)  # khung background
     fr_tview = Frame(view_teacher, bg='white', width=1160, height=760)
@@ -152,7 +169,7 @@ def view_teacher_page():
     # TREE VIEW
     teacher_tv = ttk.Treeview(fr_teacher_info, yscrollcommand=y_scroll, height=33)
     teacher_tv.bind("<ButtonRelease-1>", view_teacher_info)
-    tv3 = ttk.Treeview(fr_lbl_teacher)  # chứa thông tin được click
+    tv3 = ttk.Treeview(fr_lbl_teacher,height=15)  # chứa thông tin được click
     # OUTPUT DATA TO teacher_tv
     teacher_info_df = pd.read_sql("""SELECT * FROM invigilator_db ORDER BY ID;""", db_conn)
     y_scroll.pack(side=RIGHT, fill=Y)
@@ -224,51 +241,80 @@ def review_page():
     img_view_teacher = PhotoImage(file='images\\view_teacher.png')
     img_view_course = PhotoImage(file='images\\view_course.png')
     img_view_exit = PhotoImage(file='images\\view_exit.png')
+    img_view_schedule = PhotoImage(file='images\\button_schedule.png')
+    load1 = Image.open('images\\temp.jpg')
+    img_temp =ImageTk.PhotoImage(load1)
     # Frames
     fr_bg_review = Frame(review_, width=1368, height=768)
     fr_bg_review.place(x=0, y=0)  # khung background
     fr_review = Frame(review_, bg='white', width=1328, height=728)
     fr_review.pack(padx=20, pady=20)  # khung trắng
 
-    f0 = LabelFrame(fr_review, text='Menu', bg='white', width=450, height=608,
+    f0 = LabelFrame(fr_review, text='Menu', bg='white', width=360, height=608,
                     font=("Helvetica", 20))
     f0.propagate(0)
     f0.place(x=15, y=100)
-    rs = pd.read_excel("output.xlsx")
-    lbl_tv5 = Label(fr_review,height=50)
-    lbl_tv5.place(x=500, y=120)
-    tv5 = ttk.Treeview(lbl_tv5)
-    tv5.delete(*tv5.get_children())
+    lbl_tv5 = Label(fr_review,image=img_temp)
+    lbl_tv5.place(x=380, y=120)
+    #rs = pd.read_excel("output.xlsx")
+# THÊM 1 button để hiện treeview5
 
-    tv5['column'] = list(rs.columns)
-    tv5['show'] = 'headings'
-    for column in tv5['column']:
-        tv5.heading(column, text=column)
-    tv5.column('#1', width=70, stretch=0, anchor='n')
-    tv5.column('#2', width=250, stretch=0, anchor='w')
-    tv5.column('#3', width=70, stretch=0, anchor='n')
-    tv5.column('#4', width=70, stretch=0, anchor='n')
-    tv5.column('#5', stretch=0, anchor='n')
-    tv5.column('#6', width=200, stretch=0, anchor='n')
-    tv5.column('#7', width=400, stretch=0, anchor='w')
-    teacher_rows_df = rs.to_numpy().tolist()
-    for row in teacher_rows_df:
-        tv5.insert("", "end", value=row)
-
-    tv5.pack(fill=BOTH, pady=10, padx=10)
     # Labels
     lbl_bg_review = Label(fr_bg_review, image=render)
     lbl_bg_review.place(x=0, y=0)  # chứa background
     lbl_name_db = Label(fr_review, image=img_name, bg='white')
     lbl_name_db.place(x=500, y=15)  # chứa tên
+
+    def view_schedule():
+        try:
+            db_conn=sqlite3.connect("database.db")
+            rs = pd.read_sql("""SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, schedule_db.QuantityOfInvigilator, GROUP_CONCAT(invigilator_db.Full_Name) Invigilator
+        FROM assign_db, invigilator_db, schedule_db
+        WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID
+        GROUP BY assign_db.CourseID
+        ORDER BY assign_db.CourseID;""",db_conn)
+            tv5 = ttk.Treeview(lbl_tv5, height=27)
+            tv5.delete(*tv5.get_children())
+
+            tv5['column'] = list(rs.columns)
+            tv5['show'] = 'headings'
+            for column in tv5['column']:
+                tv5.heading(column, text=column)
+            tv5.column('#1', width=70, stretch=0, anchor='n')
+            tv5.column('#2', width=90, stretch=0, anchor='w')
+            tv5.column('#3', width=70, stretch=0, anchor='n')
+            tv5.column('#4', width=50, stretch=0, anchor='n')
+            tv5.column('#5', stretch=0, anchor='n')
+            tv5.column('#6', width=70, stretch=0, anchor='n')
+            tv5.column('#7', width=350, stretch=0, anchor='w')
+            teacher_rows_df = rs.to_numpy().tolist()
+            for row in teacher_rows_df:
+                tv5.insert("", "end", value=row)
+
+            tv5.pack(fill=BOTH, pady=10, padx=10)
+        except sqlite3.OperationalError:
+            messagebox.showinfo("Info!", "Nothing to show yet!\nPlease run the algorithm first.")
+            review_.destroy()
+            return home_
+        except pd.io.sql.DatabaseError:
+            messagebox.showinfo("Info!", "Nothing to show yet!\nPlease run the algorithm first.")
+            review_.destroy()
+            return home_
+
+    def exit_rv():
+        review_.destroy()
+
     # Buttons
+    btn_schedule = Button (f0, command=view_schedule, bd=0, bg='white', image=img_view_schedule,
+                              activebackground='white')
+    btn_schedule.pack(padx=20, pady=20)
     btn_view_teacher = Button(f0, command=view_teacher_page, bd=0, bg='white', image=img_view_teacher,
                               activebackground='white')
-    btn_view_teacher.pack(padx=20, pady=20)
+    btn_view_teacher.pack()
     btn_view_course = Button(f0, command=view_course_page, bd=0, bg='white', image=img_view_course,
                              activebackground='white')
     btn_view_course.pack(padx=20, pady=20)
-    btn_view_exit = Button(f0, command='', bd=0, bg='white', image=img_view_exit,
+    btn_view_exit = Button(f0, command=exit_rv, bd=0, bg='white', image=img_view_exit,
                            activebackground='white')
     btn_view_exit.place(x=125, y=488)
     review_.mainloop()
@@ -276,7 +322,7 @@ def review_page():
 
 def analysis_page():
     queue = Queue()
-    analyze_window = Toplevel(root_)
+    analyze_window = Toplevel(home_)
     analyze_window.title(f"Genetic algorithm")
     analyze_window.geometry('1366x768')
     analyze_window['bg']='#dad299'
@@ -285,6 +331,7 @@ def analysis_page():
     db_conn = sqlite3.connect("database.db")
     cursor = db_conn.cursor()
     cursor.executescript(""" 
+        DROP TABLE IF EXISTS convert_ShiftOD;
         CREATE TABLE IF NOT EXISTS convert_ShiftOD(
             TestDate INTEGER NOT NULL,
             ShiftOD INTEGER,
@@ -551,7 +598,7 @@ def analysis_page():
         t0 = time.time()
         # tao quan the ban dau
         population = create_population()
-        n_generations = 2
+        n_generations = 1
         for _ in range(n_generations):
             sorted_old_population = sorted(population, reverse=True, key=compute_fitness)
             population = create_new_population(sorted_old_population)
@@ -599,6 +646,7 @@ def analysis_page():
         db_conn1.close()
 
     # Dataframe chứa output
+
     thread1=threading.Thread(target=GAs)
 
     def run_thread():
@@ -609,12 +657,12 @@ def analysis_page():
         thread.start()
 
         # defines indeterminate progress bar (used while thread is alive) #
-        _bar = ttk.Progressbar(analyze_window, orient=HORIZONTAL, mode='indeterminate', maximum=200)
+        _bar = ttk.Progressbar(analyze_window, orient=HORIZONTAL, mode='indeterminate', maximum=100, length=330)
 
         # defines determinate progress bar (used when thread is dead) #
 
         # places and starts progress bar #
-        _bar.place(x=40,y=400)
+        _bar.place(x=40,y=380)
         _bar.start()
 
         # checks whether thread is alive #
@@ -625,6 +673,7 @@ def analysis_page():
         # once thread is no longer active, remove pb1 and place the '100%' progress bar #
         _bar.destroy()
         kq_df = pd.read_excel("output.xlsx")
+        run_btn.config(state='disabled')
         tv4 = ttk.Treeview(lbl_treeview)
         tv4.delete(*tv4.get_children())
 
@@ -686,9 +735,9 @@ def analysis_page():
     l7.place(x=250, y=230)
 
     run_btn = Button(analyze_window, image=img_run, command=run_thread, bg='#dad299', bd=0, activebackground='#dad299')
-    run_btn.place(x=200, y=300)
+    run_btn.place(x=170, y=290)
 
-    lbl_treeview = Label(analyze_window, bg='#dad299')  # , width=160, height=15, borderwidth=2, relief='solid'
+    lbl_treeview = Label(analyze_window, bg='#dad299', width=160, height=15, borderwidth=2, relief='solid')  # , width=160, height=15, borderwidth=2, relief='solid'
     lbl_treeview.place(x=40, y=450)
 
     analyze_window.mainloop()
@@ -697,9 +746,10 @@ def analysis_page():
 def home_page():
     try:
         conn_ = sqlite3.connect("database.db")
-        check_case = pd.read_sql("Select * from invigilator_db", conn_)
+        check_case = pd.read_sql("Select * from invigilator_db where ID = 1", conn_)
+        root_.destroy()
         global home_
-        home_ = Toplevel(root_)
+        home_ = Tk()
         home_.geometry("1366x768")
         home_.resizable(0, 0)
         home_.title("HOME PAGE")
@@ -721,11 +771,12 @@ def home_page():
         btn_view.place(x=200, y=400)
 
         btn_run = Button(fr_home, command=analysis_page, image=img_run, bd=0, bg='white', activebackground='white')
-        btn_run.place(x=780, y=400)
+        btn_run.place(x=750, y=400)
 
         home_.mainloop()
     except pd.io.sql.DatabaseError:
         messagebox.showerror("Error!", f"There are no data to execute.\nPlease make sure you already import data!")
+        return btn_GAs.config(state='disabled')
 
 
 root_ = Tk()
