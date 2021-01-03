@@ -1,5 +1,3 @@
-# This is a sample Python script.
-
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import math
@@ -14,8 +12,6 @@ import pandas as pd
 import numpy as np
 from PIL import Image, ImageTk
 from multiprocessing import Queue
-
-
 # Functions
 
 
@@ -50,6 +46,8 @@ def fn_imp_teacher():
         return None
     except UnboundLocalError:
         messagebox.showerror("Error!", "You just canceling import TEACHER.\nPlease try again!")
+        return btn_imp_course.config(state='disabled')
+    return btn_imp_course.config(state='active')
     db_con.commit()
     db_con.close()
 
@@ -98,6 +96,7 @@ def fn_imp_course():
         db_con.close()
     except UnboundLocalError:
         messagebox.showerror("Error!", "You just canceling import COURSE.\nPlease try again!")
+        return btn_GAs.config(state='disabled')
     return btn_GAs.config(state='active')
 
 
@@ -123,7 +122,7 @@ def view_teacher_page():
             selected = teacher_tv.focus()
             values = teacher_tv.item(selected, 'values')
             fr_lbl_teacher.config(text=f"{values[1]}'s information")
-            xxx = pd.read_sql(f"""SELECT CourseID, CourseName, Room, ShiftOD, TestDate
+            temp = pd.read_sql(f"""SELECT CourseID, CourseName, Room, ShiftOD, TestDate
             FROM 
                 (SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, 
                 invigilator_db.ID Invigilator 
@@ -132,7 +131,7 @@ def view_teacher_page():
                 ORDER BY schedule_db.TestDate) 
             WHERE Invigilator = {values[0]}""", db_conn)  # query get selected data
             fn_clear_tv(tv3)
-            tv3['column'] = list(xxx.columns)
+            tv3['column'] = list(temp.columns)
             tv3['show'] = 'headings'
             for column in tv3['column']:
                 tv3.heading(column, text=column)
@@ -141,7 +140,7 @@ def view_teacher_page():
             tv3.column('#3', width=70, stretch=0, anchor='n')
             tv3.column('#4', width=70, stretch=0, anchor='n')
             tv3.column('#5', stretch=0, anchor='n')
-            teacher_rows_df = xxx.to_numpy().tolist()
+            teacher_rows_df = temp.to_numpy().tolist()
             for row in teacher_rows_df:
                 tv3.insert("", "end", value=row)
             tv3.pack(fill=BOTH, pady=10, padx=10)
@@ -169,12 +168,22 @@ def view_teacher_page():
     fr_lbl_teacher = LabelFrame(fr_tview, bg='white', font=20)
     fr_lbl_teacher.place(x=490, y=120)
 
+    # BACK BUTTON
+    def back_page():
+        view_teacher.destroy()
+
+    img_back = PhotoImage(file='images\\button_back.png')
+    back_btn = Button(fr_tview, image=img_back, command=back_page, bg='white', bd=0, activebackground='white')
+    back_btn.place(x=740, y=600)
+
     # ScrollBar
     y_scroll = Scrollbar(fr_teacher_info)
+
     # TREE VIEW
     teacher_tv = ttk.Treeview(fr_teacher_info, yscrollcommand=y_scroll, height=33)
     teacher_tv.bind("<ButtonRelease-1>", view_teacher_info)
     tv3 = ttk.Treeview(fr_lbl_teacher, height=15)  # chứa thông tin được click
+
     # OUTPUT DATA TO teacher_tv
     teacher_info_df = pd.read_sql("""SELECT * FROM invigilator_db ORDER BY ID;""", db_conn)
     y_scroll.pack(side=RIGHT, fill=Y)
@@ -220,8 +229,16 @@ def view_course_page():
         string = strftime('%H:%M:%S %p')
         lbl_clock.config(text=string)
         lbl_clock.after(1000, clock)
-
     clock()
+
+    # BACK BUTTON
+    def back_page():
+        view_course.destroy()
+
+    img_back = PhotoImage(file='images\\button_back.png')
+    back_btn = Button(fr_cview, image=img_back, command=back_page, bg='white', bd=0, activebackground='white')
+    back_btn.place(x=500, y=666)
+
     # SCROLL BAR
     y_scroll = Scrollbar(fr_course_info)
     # TREE VIEW
@@ -267,12 +284,11 @@ def review_page():
     fr_review.pack(padx=20, pady=20)  # khung trắng
 
     f0 = LabelFrame(fr_review, text='Menu', bg='white', width=360, height=608,
-                    font=("Helvetica", 20))
+                    font=("Helvetica", 20)) #Menu frame
     f0.propagate(0)
     f0.place(x=15, y=100)
     lbl_tv5 = Label(fr_review, image=img_temp)
-    lbl_tv5.place(x=380, y=120)
-    # rs = pd.read_excel("output.xlsx")
+    lbl_tv5.place(x=550, y=200)
 
     # Labels
     lbl_bg_review = Label(fr_bg_review, image=render)
@@ -311,8 +327,8 @@ def review_page():
             tv5.column('#5', stretch=0, anchor='n')
             tv5.column('#6', width=70, stretch=0, anchor='n')
             tv5.column('#7', width=350, stretch=0, anchor='w')
-            teacher_rows_df = rs.to_numpy().tolist()
-            for row in teacher_rows_df:
+            _rows_df = rs.to_numpy().tolist()
+            for row in _rows_df:
                 tv5.insert("", "end", value=row)
 
             tv5.pack(fill=BOTH, pady=10, padx=10)
@@ -664,17 +680,15 @@ def analysis_page():
                         FOREIGN KEY(CourseID) REFERENCES schedule_db(CourseID)
                         );""")
         assign_df.to_sql('assign_db', db_conn1, if_exists='append', index=False)
-        scheduler_df = pd.read_sql("""SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, schedule_db.QuantityOfInvigilator, GROUP_CONCAT(invigilator_db.Full_Name) Invigilator
-    FROM assign_db, invigilator_db, schedule_db
-    WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID
-    GROUP BY assign_db.CourseID
-    ORDER BY assign_db.CourseID;""", db_conn1)
-        scheduler_df.to_excel("output.xlsx", index=False)
+       #scheduler_df = pd.read_sql("""SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, schedule_db.QuantityOfInvigilator, GROUP_CONCAT(invigilator_db.Full_Name) Invigilator
+    #FROM assign_db, invigilator_db, schedule_db
+    #WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID
+    #GROUP BY assign_db.CourseID
+    #ORDER BY assign_db.CourseID;""", db_conn1)
+        #scheduler_df.to_excel("output.xlsx", index=False)
 
         db_conn1.commit()
         db_conn1.close()
-
-    # Dataframe chứa output
 
     thread1 = threading.Thread(target=GAs)
 
@@ -692,7 +706,7 @@ def analysis_page():
         # defines determinate progress bar (used when thread is dead) #
 
         # places and starts progress bar #\
-        _bar.place(x=40, y=380)
+        _bar.place(x=40, y=370)
         _bar.start()
 
         # checks whether thread is alive #
@@ -704,9 +718,13 @@ def analysis_page():
         _bar.destroy()
         l9.config(text=str(int(total_time)))
 
-        kq_df = pd.read_excel("output.xlsx")
+        kq_df = pd.read_sql("""SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, schedule_db.QuantityOfInvigilator, GROUP_CONCAT(invigilator_db.Full_Name) Invigilator
+    FROM assign_db, invigilator_db, schedule_db
+    WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID
+    GROUP BY assign_db.CourseID
+    ORDER BY assign_db.CourseID;""", db_conn)
         run_btn.config(state='disabled')
-
+        save_btn.config(state='normal')
         tv4.delete(*tv4.get_children())
 
         tv4['column'] = list(kq_df.columns)
@@ -720,8 +738,8 @@ def analysis_page():
         tv4.column('#5', stretch=0, anchor='n')
         tv4.column('#6', width=200, stretch=0, anchor='n')
         tv4.column('#7', width=400, stretch=0, anchor='w')
-        teacher_rows_df = kq_df.to_numpy().tolist()
-        for row in teacher_rows_df:
+        _rows_df = kq_df.to_numpy().tolist()
+        for row in _rows_df:
             tv4.insert("", "end", value=row)
 
         tv4.pack(fill=BOTH, pady=10, padx=10)
@@ -734,6 +752,7 @@ def analysis_page():
     render = ImageTk.PhotoImage(img_load)
     img_name = PhotoImage(file='images\\name_Genetic_Algorithm.png')
     img_run = PhotoImage(file='images\\generate_ga.png')
+    img_save = PhotoImage(file='images\\button_save.png')
     # UI #
 
     # FRAMES
@@ -771,6 +790,8 @@ def analysis_page():
     l8.place(x=40, y=260)
     l9 = Label(analyze_window, bg='white', font=20, width=10, borderwidth=2, relief="groove")
     l9.place(x=250, y=260)
+    l10 = Label(analyze_window, bg='white', text="Result table", font=20)
+    l10.place(x=40, y=390)
     lbl_clock = Label(analyze_window, bg='white', foreground='black', font=40)
     lbl_clock.place(x=1200, y=40)
 
@@ -778,11 +799,25 @@ def analysis_page():
         string = strftime('%H:%M:%S %p')
         lbl_clock.config(text=string)
         lbl_clock.after(1000, clock)
-
     clock()
-    run_btn = Button(analyze_window, image=img_run, command=run_thread, bg='white', bd=0, activebackground='white')
-    run_btn.place(x=170, y=300)
 
+    def save_file():
+        filename = filedialog.asksaveasfilename(filetypes=[("Excel file", ".xlsx"), ("All file", ".*")])
+        if filename:
+            data = pd.read_sql("""SELECT assign_db.CourseID,  schedule_db.CourseName, schedule_db.Room, schedule_db.ShiftOD, schedule_db.TestDate, schedule_db.QuantityOfInvigilator, GROUP_CONCAT(invigilator_db.Full_Name) Invigilator
+    FROM assign_db, invigilator_db, schedule_db
+    WHERE assign_db.ID=invigilator_db.ID and schedule_db.CourseID = assign_db.CourseID
+    GROUP BY assign_db.CourseID
+    ORDER BY assign_db.CourseID;""", db_conn)
+            data.to_excel(filename + ".xlsx")
+
+    # GENERATE BUTTON
+    run_btn = Button(analyze_window, image=img_run, command=run_thread, bg='white', bd=0, activebackground='white')
+    run_btn.place(x=40, y=300)
+    # SAVE BUTTON
+    save_btn = Button(analyze_window, image=img_save, command=save_file, bg='white', bd=0, activebackground='white')
+    save_btn.place(x=260, y=300)
+    save_btn.config(state='disable')
     lbl_treeview = Label(analyze_window, bg='#B5D9B5', width=160, height=15, borderwidth=2,
                          relief='solid')  # , width=160, height=15, borderwidth=2, relief='solid'
     lbl_treeview.place(x=40, y=420)
