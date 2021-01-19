@@ -10,8 +10,8 @@ base = None
 if sys.platform == "win32":
     base = "Win32GUI"
 
-setup(  name = "Invigilator Generator",
-        version = "0.1",
+setup(  name = "Invigilator Roster Generator",
+        version = "0.4",
         description = "GUI application!",
         options = {"build_exe": build_exe_options},
-        executables = [Executable("main.py", base=base)])
+        executables = [Executable("InviglatorRosterGenerator.py", base=base)])
